@@ -26,7 +26,7 @@ while True:
         if event.type == pg.MOUSEBUTTONDOWN:
             stat_count += 1
             stat_ch_part[f'static_particle_{stat_count}'] = Stationary_Charged_Particle(screen, pg.mouse.get_pos(), 10,
-                                                                                        20, 15 * 10 ** -6)
+                                                                                        20, 1 * 10 ** -6)
             objs.append(stat_ch_part[f'static_particle_{stat_count}'])
 
         if event.type == pg.KEYDOWN:
@@ -58,26 +58,37 @@ while True:
 
     if len(acting_parts) >= 1:
         iterated = []
-        for test_charge in acting_parts.values():
+        for test_charge in acting_parts:
 
-            for other_charge in acting_parts.values():  # mutual acting force on each particle
-                if other_charge != test_charge:
-                    if (test_charge, other_charge) not in iterated and (
-                            other_charge, test_charge) not in iterated:  # to prevent many iterations
-                        acting_force(test_charge, other_charge)
-                        iterated.append((test_charge, other_charge))
+            if acting_parts[test_charge].check():  # primary constraint to check if particle1 within bounds
 
-            if stat_count >= 1:  # when a stat_charge present
-                for i in stat_ch_part.values():
-                    i.acting_field(test_charge)
+                for other_charge in acting_parts:  # mutual acting force on each particle
 
-            if capacitor_count >= 1:  # when a capacitor present
-                for i in capacitors_objs.values():
-                    if i.collision(test_charge):
-                        i.acting_plate_field(test_charge)
+                    if other_charge != test_charge:
+
+                        if acting_parts[other_charge].check():  # primary constraint to check if particle2 within bounds
+
+                            if (test_charge, other_charge) not in iterated and (
+                                    other_charge, test_charge) not in iterated:  # to prevent many iterations
+
+                                acting_force(acting_parts[test_charge], acting_parts[other_charge])  # calculates force
+                                iterated.append((test_charge, other_charge))
+
+                if stat_count >= 1:  # when a stat_charge present
+                    for i in stat_ch_part.values():
+                        i.acting_field(acting_parts[test_charge])
+
+                if capacitor_count >= 1:  # when a capacitor present
+                    for i in capacitors_objs.values():
+                        if i.collision(acting_parts[test_charge]):
+                            i.acting_plate_field(acting_parts[test_charge])
 
     for i in objs:  # to draw all objects
+        if i in acting_parts.values():
+            if not i.check():
+                objs.remove(i)
+
         i.update()
 
-    clock.tick(120)
+    clock.tick(360)
     pg.display.flip()
