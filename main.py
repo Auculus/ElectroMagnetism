@@ -6,16 +6,16 @@ pg.init()
 screen = pg.display.set_mode((1000, 900))
 clock = pg.time.Clock()
 
-stat_count = 1  # count of static charged object
-test_ch_count = 1  # count of test charge objects
+objs = []  # list of all objects
+
+stat_count = 0  # count of static charged object
+test_ch_count = 0  # count of test charge objects
 electron_count = 0  # count of electron objects
 proton_count = 0  # count of proton objects
 capacitor_count = 0  # count of capacitors
 
 stat_ch_part = {}  # collection of statically charged particles
-test_ch = {}  # collection of test charges
-electron_part = {}  # collection of electrons
-proton_part = {}  # collection of protons
+acting_parts = {}  # collection of all acting particles
 capacitors_objs = {}  # collection of capacitors
 
 while True:
@@ -25,16 +25,59 @@ while True:
 
         if event.type == pg.MOUSEBUTTONDOWN:
             stat_count += 1
-            # stat_ch_part[f'static_particle_{stat_count}']=Stationary_Charged_Particle(screen,pg.mouse.get_pos(),10,20,15*10**-6)
+            stat_ch_part[f'static_particle_{stat_count}'] = Stationary_Charged_Particle(screen, pg.mouse.get_pos(), 10,
+                                                                                        20, 15 * 10 ** -6)
+            objs.append(stat_ch_part[f'static_particle_{stat_count}'])
+
+        if event.type == pg.KEYDOWN:
+            if event.key == pg.K_c:
+                capacitor_count += 1
+                capacitors_objs[f'Capacitor_{capacitor_count}'] = Parallel_Plate_Capacitor(screen, pg.mouse.get_pos(),
+                                                                                           100, 50, 2 * 10 ** -19)
+                objs.append(capacitors_objs[f'Capacitor_{capacitor_count}'])
+
+        if event.type == pg.KEYDOWN:
+            if event.key == pg.K_t:
+                test_ch_count += 1
+                acting_parts[f'Test_charge_{test_ch_count}'] = Test_Charge(pg.mouse.get_pos(), screen)
+                objs.append(acting_parts[f'Test_charge_{test_ch_count}'])
+
+        if event.type == pg.KEYDOWN:
+            if event.key == pg.K_e:
+                electron_count += 1
+                acting_parts[f'Electron_particle_{electron_count}'] = Electron(pg.mouse.get_pos(), screen)
+                objs.append(acting_parts[f'Electron_particle_{electron_count}'])
+
+        if event.type == pg.KEYDOWN:
+            if event.key == pg.K_p:
+                proton_count += 1
+                acting_parts[f'Proton_particle_{proton_count}'] = Proton(pg.mouse.get_pos(), screen)
+                objs.append(acting_parts[f'Proton_particle_{proton_count}'])
 
     screen.fill('black')
-    '''for i in stat_ch_part.values(): #to draw the objects
-        i.update()'''
 
-    if len(stat_ch_part) >= 1 and len(test_ch) > 0:
-        for i in stat_ch_part.values():
-            for j in test_ch.values():
-                i.acting_field(j)
+    if len(acting_parts) >= 1:
+        iterated = []
+        for test_charge in acting_parts.values():
+
+            for other_charge in acting_parts.values():  # mutual acting force on each particle
+                if other_charge != test_charge:
+                    if (test_charge, other_charge) not in iterated and (
+                            other_charge, test_charge) not in iterated:  # to prevent many iterations
+                        acting_force(test_charge, other_charge)
+                        iterated.append((test_charge, other_charge))
+
+            if stat_count >= 1:  # when a stat_charge present
+                for i in stat_ch_part.values():
+                    i.acting_field(test_charge)
+
+            if capacitor_count >= 1:  # when a capacitor present
+                for i in capacitors_objs.values():
+                    if i.collision(test_charge):
+                        i.acting_plate_field(test_charge)
+
+    for i in objs:  # to draw all objects
+        i.update()
 
     clock.tick(120)
     pg.display.flip()

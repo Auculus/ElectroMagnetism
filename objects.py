@@ -40,7 +40,7 @@ class Test_Charge:
 
 
 class Electron:
-    def __init__(self, coords: tuple, surface: pg.surface, radius=3, mass=9.1 * 10 ** -31,
+    def __init__(self, coords: tuple, surface: pg.surface, radius=5, mass=9.1 * 10 ** -31,
                  charge=-1.6 * 10 ** -19) -> None:
         self.pos = pg.Vector2(coords[0], coords[1])
         self.surface = surface
@@ -73,7 +73,7 @@ class Electron:
 
 
 class Proton:
-    def __init__(self, coords: tuple, surface: pg.surface, radius=1, mass=1.67 * 10 ** -27,
+    def __init__(self, coords: tuple, surface: pg.surface, radius=5, mass=9.1*10**-31,
                  charge=1.6 * 10 ** -19) -> None:
         self.pos = pg.Vector2(coords[0], coords[1])
         self.surface = surface
@@ -161,3 +161,13 @@ class Parallel_Plate_Capacitor:
         field = (-potential / self.thickness) * dist_vect.normalize()
         force = field * acting_particle.charge  # force acting on particle
         acting_particle.vel += force / acting_particle.mass
+
+
+def acting_force(acting_particle1: Test_Charge or Electron or Proton,
+                 acting_particle2: Test_Charge or Electron or Proton) -> None:
+    r_dist12 = acting_particle1.pos - acting_particle2.pos
+    r_dist21=acting_particle2.pos-acting_particle1.pos
+    f21 = (k * acting_particle2.charge * acting_particle1.charge / (r_dist21.length()) ** 2) * r_dist21.normalize()
+    f12= (k * acting_particle2.charge * acting_particle1.charge / (r_dist12.length()) ** 2) * r_dist12.normalize()
+    acting_particle1.vel += f12 / acting_particle1.mass
+    acting_particle2.vel += f21 / acting_particle2.mass
