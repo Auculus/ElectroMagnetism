@@ -8,7 +8,7 @@ Mew_not = 4 * math.pi * 10 ** -7
 
 
 class Test_Charge:
-    def __init__(self, coords: tuple, surface: pg.surface, radius=5, mass=10, charge=1) -> None:
+    def __init__(self, coords: tuple, surface: pg.surface, radius=5, mass=1, charge=10 ** -3) -> None:
         self.pos = pg.Vector2(coords[0], coords[1])
         self.surface = surface
         self.radius = radius
@@ -17,26 +17,15 @@ class Test_Charge:
         self.vel = pg.Vector2(0, 0)
 
     def update(self) -> None:
-        self.border_collision()
         self.pos += self.vel
         pg.draw.circle(self.surface, "Red", (self.pos[0], self.pos[1]), self.radius)
 
     def rect(self) -> object:
         return pg.draw.circle(self.surface, "Red", (self.pos[0], self.pos[1]), self.radius)
 
-    def border_collision(self) -> None:
-        if self.pos[0] >= self.surface.get_width() - self.radius:
-            self.pos[0] = self.surface.get_width() - self.radius
-            self.vel[0] *= -1
-        if self.pos[0] <= self.radius:
-            self.pos[0] = self.radius
-            self.vel[0] *= -1
-        if self.pos[1] >= self.surface.get_height() - self.radius:
-            self.pos[1] = self.surface.get_height() - self.radius
-            self.vel[1] *= -1
-        if self.pos[1] <= self.radius:
-            self.pos[1] = self.radius
-            self.vel[1] *= -1
+    def check(self):  # checks boundary
+        if 0 < self.pos.x < 1000 and 0 < self.pos.y < 900:
+            return True
 
 
 class Electron:
@@ -50,26 +39,15 @@ class Electron:
         self.vel = pg.Vector2(0, 0)
 
     def update(self) -> None:
-        self.border_collision()
         self.pos += self.vel
         pg.draw.circle(self.surface, "Green", (self.pos[0], self.pos[1]), self.radius)
 
     def rect(self) -> object:
         return pg.draw.circle(self.surface, "Green", (self.pos[0], self.pos[1]), self.radius)
 
-    def border_collision(self) -> None:
-        if self.pos[0] >= self.surface.get_width() - self.radius:
-            self.pos[0] = self.surface.get_width() - self.radius
-            self.vel[0] *= -1
-        if self.pos[0] <= self.radius:
-            self.pos[0] = self.radius
-            self.vel[0] *= -1
-        if self.pos[1] >= self.surface.get_height() - self.radius:
-            self.pos[1] = self.surface.get_height() - self.radius
-            self.vel[1] *= -1
-        if self.pos[1] <= self.radius:
-            self.pos[1] = self.radius
-            self.vel[1] *= -1
+    def check(self):  # checks boundary
+        if 0 < self.pos.x < 1000 and 0 < self.pos.y < 900:
+            return True
 
 
 class Proton:
@@ -83,26 +61,15 @@ class Proton:
         self.vel = pg.Vector2(0, 0)
 
     def update(self) -> None:
-        self.border_collision()
         self.pos += self.vel
         pg.draw.circle(self.surface, "Yellow", (self.pos[0], self.pos[1]), self.radius)
 
     def rect(self) -> object:
         return pg.draw.circle(self.surface, "Yellow", (self.pos[0], self.pos[1]), self.radius)
 
-    def border_collision(self) -> None:
-        if self.pos[0] >= self.surface.get_width() - self.radius:
-            self.pos[0] = self.surface.get_width() - self.radius
-            self.vel[0] *= -1
-        if self.pos[0] <= self.radius:
-            self.pos[0] = self.radius
-            self.vel[0] *= -1
-        if self.pos[1] >= self.surface.get_height() - self.radius:
-            self.pos[1] = self.surface.get_height() - self.radius
-            self.vel[1] *= -1
-        if self.pos[1] <= self.radius:
-            self.pos[1] = self.radius
-            self.vel[1] *= -1
+    def check(self):  # checks boundary
+        if 0 < self.pos.x < 1000 and 0 < self.pos.y < 900:
+            return True
 
 
 class Stationary_Charged_Particle:
@@ -163,11 +130,21 @@ class Parallel_Plate_Capacitor:
         acting_particle.vel += force / acting_particle.mass
 
 
+class Solenoid:
+    def __init__(self, coords, length, turns, current):
+        pass
+
+
 def acting_force(acting_particle1: Test_Charge or Electron or Proton,
                  acting_particle2: Test_Charge or Electron or Proton) -> None:
-    r_dist12 = acting_particle1.pos - acting_particle2.pos
-    r_dist21 = acting_particle2.pos - acting_particle1.pos
-    f21 = (k * acting_particle2.charge * acting_particle1.charge / (r_dist21.length()) ** 2) * r_dist21.normalize()
-    f12 = (k * acting_particle2.charge * acting_particle1.charge / (r_dist12.length()) ** 2) * r_dist12.normalize()
+    if acting_particle1.check() and acting_particle2.check():
+        r_dist12 = acting_particle1.pos - acting_particle2.pos
+        r_dist21 = acting_particle2.pos - acting_particle1.pos
+        f21 = (k * acting_particle2.charge * acting_particle1.charge / (r_dist21.length()) ** 2) * r_dist21.normalize()
+        f12 = (k * acting_particle2.charge * acting_particle1.charge / (r_dist12.length()) ** 2) * r_dist12.normalize()
+    else:
+        f21 = pg.Vector2(0, 0)
+        f12 = pg.Vector2(0, 0)
+
     acting_particle1.vel += f12 / acting_particle1.mass
     acting_particle2.vel += f21 / acting_particle2.mass
