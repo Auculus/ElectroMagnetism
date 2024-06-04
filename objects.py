@@ -131,7 +131,7 @@ class Parallel_Plate_Capacitor:
 
 
 class Current_wire:
-    def __init__(self, coords: tuple, surface: pg.Surface, current=2*10**10, length=1000):
+    def __init__(self, coords: tuple, surface: pg.Surface, current=2 * 10 ** 10, length=750):
         self.center_pos = pg.Vector3(coords[0], coords[1], 0)
         self.surface = surface
         self.current = current
@@ -141,12 +141,16 @@ class Current_wire:
 
     def update(self) -> None:
         pg.draw.line(self.surface, (0, 255, 255),
-                     (self.center_pos.x , self.center_pos.y + (self.length / 2)),
-                     (self.center_pos.x , self.center_pos.y - (self.length / 2)))
+                     (self.center_pos.x, self.center_pos.y + (self.length / 2)),
+                     (self.center_pos.x, self.center_pos.y - (self.length / 2)))
 
     def collision(self, acting_part: Electron or Proton or Test_Charge):  # To confirm position of particle
-        if self.top.y < acting_part.pos.y < self.bottom.y:
+        if self.top.y <= acting_part.pos.y <= self.bottom.y:
             return 0
+        if acting_part.pos.y > self.top.y:
+            return -1
+        if acting_part.pos.y < self.bottom.y:
+            return 1
 
     def acting_mag_field(self, acting_part: Electron or Proton or Test_Charge):
         if self.collision(acting_part) == 0:  # When within the wire range
@@ -180,6 +184,29 @@ class Current_wire:
                         sin_1 + sin_2))
                 mag_force = (acting_part.vel.cross(mag_field)) * acting_part.charge
                 acting_part.vel += mag_force / acting_part.mass
+
+        if self.collision(acting_part) == -1:
+            r_dist = (acting_part.pos - self.bottom)
+            sin_1 = 1
+            sin_2 = (r_dist.y / r_dist.magnitude()) * -1
+
+            mag_field = pg.Vector3(0, 0, -1 * (Mew_not / (4 * math.pi)) * (self.current / r_dist.x) * (sin_1 + sin_2))
+            mag_force = (acting_part.vel.cross(mag_field)) * acting_part.charge
+            acting_part.vel += mag_force / acting_part.mass
+
+        if self.collision(acting_part) == 1:
+            r_dist = (acting_part.pos - self.bottom)
+            sin_1 = (r_dist.y / r_dist.magnitude()) * -1
+            sin_2 = 1
+
+            mag_field = pg.Vector3(0, 0, -1 * (Mew_not / (4 * math.pi)) * (self.current / r_dist.x) * (sin_1 + sin_2))
+            mag_force = (acting_part.vel.cross(mag_field)) * acting_part.charge
+            acting_part.vel += mag_force / acting_part.mass
+
+
+class Uniform_mag_field:
+    def __init__(self, surface: pg.surface, thickness: int):
+        pass
 
 
 def acting_force(acting_particle1: Test_Charge or Electron or Proton,
